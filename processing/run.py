@@ -44,17 +44,30 @@ points = [trans(f['geometry']['coordinates'],epsg_file,epsg_metric) for f in fea
 # Calculate the Maximum distance to walk to the next bus stop
 max_distance = walking_speed * 60 * max_minutes
 
-# Cluster points and add the cluster information to the features
+# Cluster the pointlist and add the cluster information to the original features
 cluster = cluster_pointlist(points,max_distance)
 for n,feature in enumerate(features):
 	features[n]['properties']['cluster'] = int(cluster[n])
 
-# Return weighted centroid of clusters
-""" 
-Needs to be written ...
-"""
+# Reorganize features to cluster id
+clusters = {}
+for feature in features:
+	if feature['properties']['cluster'] in clusters:
+		clusters[feature['properties']['cluster']].append(feature)
+	else:
+		clusters[feature['properties']['cluster']] = [feature]
 
-# Snap to bus routes
+# Calculate weighted mean and create Bus Stops Feature-List
+bus_stops = []
+for key, cluster in clusters.iteritems():
+	xlist = [c['geometry']['coordinates'][0] for c in cluster]
+	ylist = [c['geometry']['coordinates'][1] for c in cluster]
+	xmean = sum(xlist)/float(len(xlist))
+	ymean = sum(ylist)/float(len(ylist))
+	bus_stop = {'type':'Feature','geometry':{'type': 'Point','coordinates':[xmean,ymean]},'properties':{'cluster_id':key, 'num_activity_points':len(cluster)}}
+	bus_stops.append(bus_stop)
+
+# Snap Bus Stops to bus routes
 """ 
 Needs to be written ...
 """
@@ -63,5 +76,5 @@ Needs to be written ...
 with open("../data/activity_points_clusters.geojson", "w") as f:
 	f.write(json.dumps({"type": "FeatureCollection","features": features}))
 
-#with open("../data/bus_stops.geojson", "w") as f:
-#	f.write(json.dumps({"type": "FeatureCollection","features": bus_stops}))
+with open("../data/bus_stops.geojson", "w") as f:
+	f.write(json.dumps({"type": "FeatureCollection","features": bus_stops}))
