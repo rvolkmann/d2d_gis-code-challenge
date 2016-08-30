@@ -105,7 +105,7 @@ for key, cluster in clusters.iteritems():
 		cluster_centroid = {'type':'Feature','geometry':{'type': 'Point','coordinates':[xmean,ymean]},'properties':{'cluster_id':key, 'num_activity_points':len(cluster)}}
 		cluster_centroids.append(cluster_centroid)
 
-""" Snap Cluster Centroids to bus routes to find the bus stops
+""" Snap Cluster Centroids to bus routes or bus streets to find the bus stops
 
 Shapely has a nice function to find the closest Point on a LineString.
 The following code calculates the shortest distance to each Bus Route and then finds the closest one.
@@ -115,7 +115,7 @@ Todo:
 
 * Improve performance by calculating only close Lines (some kind of geographic indexing needed)
 * Don't snap by direct line, but by street routing
-* After snapping, merge nearby clusters
+* After snapping, merge nearby bus stops
 
 """
 print('* Snap cluster centroids to bus routes to find the bus stops ...')
@@ -192,7 +192,11 @@ with open(os.path.join(script_dir,"../data/activity_points_clusters.geojson"), "
 with open(os.path.join(script_dir,"../data/bus_stops.geojson"), "w") as f:
 	f.write(json.dumps({"type": "FeatureCollection","features": bus_stops}))
 
-# Print some totally unnecessary and nerdy DONE message
+"""
+
+Print some totally unnecessary and nerdy DONE message
+
+"""
 print('''
 All done! :-)
 

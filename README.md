@@ -1,28 +1,58 @@
-# gis-code-challenge
-The code challenge for the position Software Developer, GIS
+# Door2Door GIS-Code-Challenge Script
 
-## Data Description
-The file [activity_points.geojson](https://github.com/allyapp/gis-code-challenge/blob/master/data/activity_points.geojson) contains crowdsourced locations in Dar es Salaam, Tanzania.
-The quality and the source of the data is unknown. Not all attributes of the data always contain a value. There is no additional metadata.
+* Author: Rouven Volkmann
+* Date: August 30, 2016
 
-## Task
-Imagine you are a Software Developer at Door2Door and you are presented that data. Your task is to derive bus stop locations from the data.
+## Processing
 
-##### 1. Develop an algorithm in Python that processes the data.
-##### 2. Visualise your results in a web map.
+### Introduction
 
-##### Hints:
-* You may use the provided bus routes GeoJSON file as well as additional external data to verify your results or to train your algorithm.
-* You may ask one question during the code challenge about the data. However, be prepared that there is little extra information about the data available.
+To locate preferred locations for bus stops, crowdfunded activity points are gathered, clustered by a maximum distance and snapped to the closest bus route or street.
 
-## Developing your solution:
+**Clustering**
 
-1. Please clone the repository to your local machine.
+The script runs a hierarchical clustering algorithm (Ward) on the pointset based on a maximum walking distance.
+Then the weighted centroid of each cluster is calculated to receive the activity hot-spots.
 
-2. Fulfill the given task.
+**Snapping**
 
-3. Submit your solution:
+Bus stops are preferred along established bus routes. Therefore the script tries to snap to the closest bus route. It might be suitable to start a new route if the established ones are too far and enough activities are recorded. Then, the script decides to snap to the next major street instead on which the new bus route might run.
 
-    Please submit your solutions in a form of publicly accessible git repository. Please make sure to submit the full git commit history with the project and please include instructions for testing and running your code.
+The street data was downloaded from OpenStreetMap (highway=trunk|primary|secondary|tertiary) on August 30, 2016.
 
-    Alternatively, you can submit a zip archive of your project via email.
+
+
+### Run the script
+
+**Prerequisites**
+
+* Python
+* Python modules: SciPy, fiona, pyproj
+
+Run the following command:
+
+```bash
+python data/run.py
+```
+
+## Web app
+
+After processing, you can view the result in a web app.
+
+Run a webserver pointing to the root folder of the repository.
+With Python-integrated SimpleHTTPServer you can simply run following command from that folder:
+
+```bash
+python -m SimpleHTTPServer
+```
+
+Fire up your preffered browser and load http://localhost:8000/web
+
+## Todo
+
+Several things should be done to improve the script further
+
+* merge close-by bus stops
+* snap by street routing instead of direct line
+* having more activity data, the data could be filtered by their reliability and other attributes
+
