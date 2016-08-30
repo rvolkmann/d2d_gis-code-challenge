@@ -27,7 +27,7 @@ def trans(coords,in_init,out_init):
 	p1 = Proj(init=in_init)
 	p2 = Proj(init=out_init)
 	return transform(p1,p2,coords[0],coords[1])
-
+	
 def cluster_pointlist(points,max_distance):
 	"""
 	Cluster a list or tuple of points by max_distance using scipy
@@ -102,15 +102,23 @@ Todo:
 with fiona.open(routes_file, 'r') as r:
 	routes = list(r)
 
+# Transform routes to metric coordinate system
+transformed_routes = []
+for route in routes:
+	line = route['geometry']['coordinates']
+	l = []
+	for point in line:
+		l.append(trans(point,epsg_file,epsg_metric))
+	transformed_routes.append(LineString(l))
+
 # Loop through the cluster centroids
 bus_stops = []
 for key,cluster_centroid in enumerate(cluster_centroids):
 	# Create shapely point for bus stop
-	p = Point(cluster_centroid['geometry']['coordinates'])
-	# Calculate shortest distances to all routes
+	p = Point(trans(cluster_centroid['geometry']['coordinates'],epsg_file,epsg_metric))
+	# Calculate shortest distances to the transformed routes
 	distances = []
-	for route in routes:
-		l = LineString(route['geometry']['coordinates'])
+	for l in transformed_routes:
 		cpol = l.interpolate(l.project(p)) # cpol = closest point on line
 		dist = p.distance(cpol)
 		distances.append({'dist':dist,'cpol':cpol})
@@ -119,7 +127,8 @@ for key,cluster_centroid in enumerate(cluster_centroids):
 	cpol = shortest_distance['cpol']
 	# Write bus stop
 	bus_stop = cluster_centroid
-	bus_stop['geometry']['coordinates'] = [cpol.x, cpol.y]	
+	bus_stop['geometry']['coordinates'] = trans([cpol.x, cpol.y],epsg_metric,epsg_file)
+	bus_stop['properties']['distance_to_cluster'] = int(shortest_distance['dist'])
 	bus_stops.append(bus_stop)
 
 """
