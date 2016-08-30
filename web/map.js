@@ -20,10 +20,11 @@ function initmap(){
 		minZoom: 11
 	});
 
- 
-
 	function bus_stops_popup(feature, layer){
-		layer.bindPopup('Cluster-ID: ' + feature.properties.cluster_id + '<br />Number of Activities: ' + feature.properties.num_activity_points);
+		layer.bindPopup('Cluster-ID: ' + feature.properties.cluster_id
+						+ '<br />Number of activities: ' + feature.properties.num_activity_points
+						+ '<br />Distance to activities center: ' + feature.properties.distance_to_cluster + ' m'
+		);
 	}
 
 	function circle_style(radius, fillColor='#999', color='#000'){
@@ -42,10 +43,10 @@ function initmap(){
 		onEachFeature: bus_stops_popup,
 		pointToLayer: function (feature, latlng) {
 				if (feature.properties.num_activity_points < 3){
-					radius = 4
+					radius = 6
 				}
 				else if (feature.properties.num_activity_points < 10){
-					radius = 8
+					radius = 9
 				}
 				else {
 					radius = 12
@@ -54,7 +55,7 @@ function initmap(){
 					color = '#00ff00';
 				}
 				else if (feature.properties.distance_to_cluster < 400){
-					color = '#78ff00';
+					color = '#c9ff00';
 				}
 				else if (feature.properties.distance_to_cluster < 700){
 					color = '#ff7800';
@@ -73,5 +74,5 @@ function initmap(){
 	
 	oepnv.addTo(map);
 	bus_stops.addTo(map);
-	L.control.layers(baseMaps,overlayMaps).addTo(map);
+	L.control.layers(baseMaps,overlayMaps,{collapsed:false}).addTo(map);
 }

@@ -1,0 +1,66 @@
+html, body, #mapid {
+	height:100%;
+	width:100%;
+	padding:0px;
+	margin:0px;
+}
+
+#legend {
+	position:absolute;
+	top:200px;
+	right:10px;
+
+	padding: 6px 8px;
+	z-index: 1;
+	font: 14px/16px Arial, Helvetica, sans-serif;
+}
+
+#mapid {
+	z-index:0
+}
+
+.circle {
+	display: inline-block;
+	height:18px;
+	width:18px;
+	background-color:#ccc;
+	border:1px solid #999;
+	border-radius:50%;
+}
+
+.smallcircle {
+	height:12px;
+	width:12px;
+	margin-top:3px;
+}
+
+.bigcircle {
+	height:24px;
+	width:24px;
+}
+
+.center {
+	text-align: center;
+	vertical-align: baseline;
+	width:26px;
+}
+
+.green {
+	background-color: #0f0;
+}
+
+.lightgreen {
+	background-color: #c9ff00;
+}
+
+.orange {
+	background-color: #ff7800;
+}
+
+.red {
+	background-color: #f00;
+}
+
+#legend>h1 {
+	font-size:11pt;
+}

@@ -6,7 +6,11 @@
 max_minutes = 10
 
 # m/s (default=1.4 via Wikipedia)
-walking_speed = 1.4 
+walking_speed = 1.4
+
+# File locations
+activity_points_file = '../data/activity_points.geojson'
+routes_file = '../data/routes.geojson'
 
 # EPSG Code of the input GeoJSON and the valid metric coordinate system for the location
 epsg_file = 'EPSG:4326'
@@ -14,9 +18,22 @@ epsg_metric = 'EPSG:32737'
 
 """ """ """ """
 
+print('\n-~- GIS Code Challenge - Script by Rouven Volkmann -~-\n')
+
 import json
 import fiona
+import sys
+import os
+from time import sleep
 from shapely.geometry import Point,LineString
+
+# Calculate the Maximum distance to walk to the next bus stop
+max_distance = walking_speed * 60 * max_minutes
+
+# Make paths relative to script dir
+script_dir = os.path.dirname(os.path.realpath(__file__))
+activity_points_file = os.path.join(script_dir, activity_points_file)
+routes_file = os.path.join(script_dir, routes_file)
 
 def trans(coords,in_init,out_init):
 	"""
@@ -31,7 +48,6 @@ def trans(coords,in_init,out_init):
 def cluster_pointlist(points,max_distance):
 	"""
 	Cluster a list or tuple of points by max_distance using scipy
-	
 	"""
 	from scipy.cluster.hierarchy import linkage, fcluster
 	import numpy as np
@@ -39,33 +55,31 @@ def cluster_pointlist(points,max_distance):
 	Z = linkage(X, 'ward')
 	return fcluster(Z, max_distance, criterion='distance')
 
-activity_points_file = '../data/activity_points.geojson'
-routes_file = '../data/routes.geojson'
+"""
 
-# Load activity points geojson file
+Load activity points geojson file, transform and save features to new list
+
+"""
+print('* Load Activity Points and transform to metric coordinate system ...')
 with fiona.open(activity_points_file, 'r') as activity_points:
 	features = list(activity_points)
-
 points = [trans(f['geometry']['coordinates'],epsg_file,epsg_metric) for f in features]
-
-# Calculate the Maximum distance to walk to the next bus stop
-max_distance = walking_speed * 60 * max_minutes
 
 """
 
 Cluster the pointlist and
 add the cluster information to the original features
 
+Todo:
+* add some filtering and prorization to the clustering (using the attributes)
+* Make cluster max_distance dependend on number of activies in that cluster
+
 """
+print('* Cluster points...')
 cluster = cluster_pointlist(points,max_distance)
 for n,feature in enumerate(features):
 	features[n]['properties']['cluster'] = int(cluster[n])
-
-"""
-
-Reorganize features to cluster id
-
-"""
+# Reorganize features to cluster id
 clusters = {}
 for feature in features:
 	if feature['properties']['cluster'] in clusters:
@@ -75,9 +89,10 @@ for feature in features:
 
 """
 
-Calculate weighted mean and create Bus Stops Feature-List
+Calculate weighted mean of cluster points (cluster centroids)
 
 """
+print('* Calculate weighted mean of cluster points (cluster centroids) ...') 
 cluster_centroids = []
 for key, cluster in clusters.iteritems():
 	xlist = [c['geometry']['coordinates'][0] for c in cluster]
@@ -96,8 +111,11 @@ Todo:
 
 * Improve performance by calculating only close Lines (some kind of geographic indexing needed)
 * Don't snap by direct line, but by street routing
+* After snapping, merge nearby clusters
+* For distances too far to walk, snap to next main street instead of snapping to bus routes
 
 """
+print('* Snap cluster centroids to bus routes to find the bus stops ...')
 # Load routes geojson file
 with fiona.open(routes_file, 'r') as r:
 	routes = list(r)
@@ -136,8 +154,28 @@ for key,cluster_centroid in enumerate(cluster_centroids):
 Write output
 
 """
-with open("../data/activity_points_clusters.geojson", "w") as f:
+print('* Write output ...')
+with open(os.path.join(script_dir,"../data/activity_points_clusters.geojson"), "w") as f:
 	f.write(json.dumps({"type": "FeatureCollection","features": features}))
 
-with open("../data/bus_stops.geojson", "w") as f:
+with open(os.path.join(script_dir,"../data/bus_stops.geojson"), "w") as f:
 	f.write(json.dumps({"type": "FeatureCollection","features": bus_stops}))
+
+# Print some totally unnecessary and nerdy DONE message
+print('''
+All done! :-)
+
+ _/_|[][][][][] | - -
+(      City Bus | - -
+=--OO-------OO--=dwb''')
+for i in range(5):
+	sleep(0.15)
+	sys.stdout.write("\033[F")
+	print ('=--OO-------oo--=wbd')
+	sleep(0.15)
+	sys.stdout.write("\033[F")
+	print ('=--oo-------OO--=bdw')
+	sleep(0.15)
+	sys.stdout.write("\033[F")
+	print ('=--OO-------OO--=dwb')
+print('')

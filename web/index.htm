@@ -3,16 +3,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
 <title>Door2Door GIS Code Challenge - Rouven Volkmann</title>
-<link rel="stylesheet" href="leaflet.css" />
 
-<style>
-html, body, #mapid {
-	height:100%;
-	width:100%;
-	padding:0px;
-	margin:0px;
-}
-</style>
+<link rel="stylesheet" href="leaflet.css" />
+<link rel="stylesheet" href="map.css" />
 
 <script src="leaflet.js"></script>
 <script src="leaflet.ajax.min.js"></script>
@@ -20,5 +13,23 @@ html, body, #mapid {
 
 <body onload='initmap();'>
 <div id="mapid"></div>
+
+<div id="legend" class="leaflet-control-layers">
+	<h1>Bus Stops</h1>
+	<table>
+		<tr><td colspan="2">Number of activity points nearby</td></tr>
+		<tr><td class="center"><div class="circle smallcircle">&nbsp;</div></td><td> < 3</td></tr>
+		<tr><td class="center"><div class="circle">&nbsp;</div></td><td> < 10</td></tr>
+		<tr><td class="center"><div class="circle bigcircle">&nbsp;</div></td><td> >= 10</td></tr>
+	</table>
+	<hr />
+	<table>
+		<tr><td colspan="2">Distance to activity center</td></tr>
+		<tr><td class="center"><div class="circle green">&nbsp;</div></td><td> < 100 m</td></tr>
+		<tr><td class="center"><div class="circle lightgreen">&nbsp;</div></td><td> < 400 m</td></tr>
+		<tr><td class="center"><div class="circle orange">&nbsp;</div></td><td> <  700 m</td></tr>
+		<tr><td class="center"><div class="circle red">&nbsp;</div></td><td> >=  700 m</td></tr>
+	</table>
+</div>
 </body>
 </html>
