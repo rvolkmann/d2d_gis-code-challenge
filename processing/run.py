@@ -11,6 +11,7 @@ walking_speed = 1.4
 # File locations
 activity_points_file = '../data/activity_points.geojson'
 routes_file = '../data/routes.geojson'
+streets_file = '../data/osm_major_streets.geojson'
 
 # EPSG Code of the input GeoJSON and the valid metric coordinate system for the location
 epsg_file = 'EPSG:4326'
@@ -34,6 +35,7 @@ max_distance = walking_speed * 60 * max_minutes
 script_dir = os.path.dirname(os.path.realpath(__file__))
 activity_points_file = os.path.join(script_dir, activity_points_file)
 routes_file = os.path.join(script_dir, routes_file)
+streets_file = os.path.join(script_dir, streets_file)
 
 def trans(coords,in_init,out_init):
 	"""
@@ -95,30 +97,35 @@ Calculate weighted mean of cluster points (cluster centroids)
 print('* Calculate weighted mean of cluster points (cluster centroids) ...') 
 cluster_centroids = []
 for key, cluster in clusters.iteritems():
-	xlist = [c['geometry']['coordinates'][0] for c in cluster]
-	ylist = [c['geometry']['coordinates'][1] for c in cluster]
-	xmean = sum(xlist)/float(len(xlist))
-	ymean = sum(ylist)/float(len(ylist))
-	cluster_centroid = {'type':'Feature','geometry':{'type': 'Point','coordinates':[xmean,ymean]},'properties':{'cluster_id':key, 'num_activity_points':len(cluster)}}
-	cluster_centroids.append(cluster_centroid)
+	if len(cluster) > 1: # Filter single activities
+		xlist = [c['geometry']['coordinates'][0] for c in cluster]
+		ylist = [c['geometry']['coordinates'][1] for c in cluster]
+		xmean = sum(xlist)/float(len(xlist))
+		ymean = sum(ylist)/float(len(ylist))
+		cluster_centroid = {'type':'Feature','geometry':{'type': 'Point','coordinates':[xmean,ymean]},'properties':{'cluster_id':key, 'num_activity_points':len(cluster)}}
+		cluster_centroids.append(cluster_centroid)
 
 """ Snap Cluster Centroids to bus routes to find the bus stops
 
 Shapely has a nice function to find the closest Point on a LineString.
-The Following calculates the shortest distance to each Bus Route and then finds the closest one.
+The following code calculates the shortest distance to each Bus Route and then finds the closest one.
+For distances too far to walk, snap to next main street instead of snapping to bus routes.
 
 Todo:
 
 * Improve performance by calculating only close Lines (some kind of geographic indexing needed)
 * Don't snap by direct line, but by street routing
 * After snapping, merge nearby clusters
-* For distances too far to walk, snap to next main street instead of snapping to bus routes
 
 """
 print('* Snap cluster centroids to bus routes to find the bus stops ...')
 # Load routes geojson file
 with fiona.open(routes_file, 'r') as r:
 	routes = list(r)
+
+# Load streets geojson file
+with fiona.open(streets_file, 'r') as r:
+	streets = list(r)
 
 # Transform routes to metric coordinate system
 transformed_routes = []
@@ -128,6 +135,15 @@ for route in routes:
 	for point in line:
 		l.append(trans(point,epsg_file,epsg_metric))
 	transformed_routes.append(LineString(l))
+
+# Transform streets to metric coordinate system
+transformed_streets = []
+for street in streets:
+	line = street['geometry']['coordinates']
+	l = []
+	for point in line:
+		l.append(trans(point,epsg_file,epsg_metric))
+	transformed_streets.append(LineString(l))
 
 # Loop through the cluster centroids
 bus_stops = []
@@ -142,11 +158,26 @@ for key,cluster_centroid in enumerate(cluster_centroids):
 		distances.append({'dist':dist,'cpol':cpol})
 	# Find the closest route
 	shortest_distance = min(distances, key=lambda k: k['dist'])
+	snapped_to = "Bus route"
+	# Snap to streets if distance is too big
+	if (shortest_distance['dist'] > max_distance/(cluster_centroid['properties']['num_activity_points']/2)):
+		distances = []
+		for l in transformed_streets:
+			cpol = l.interpolate(l.project(p)) # cpol = closest point on line
+			dist = p.distance(cpol)
+			distances.append({'dist':dist,'cpol':cpol})
+		# Find the closest street
+		shortest_distance_street = min(distances, key=lambda k: k['dist'])
+		# If street is closer then bus route, snap to it!
+		if (shortest_distance_street['dist'] < shortest_distance['dist']):
+			shortest_distance = shortest_distance_street
+			snapped_to = "Street"
 	cpol = shortest_distance['cpol']
 	# Write bus stop
 	bus_stop = cluster_centroid
 	bus_stop['geometry']['coordinates'] = trans([cpol.x, cpol.y],epsg_metric,epsg_file)
 	bus_stop['properties']['distance_to_cluster'] = int(shortest_distance['dist'])
+	bus_stop['properties']['snapped_to'] = snapped_to
 	bus_stops.append(bus_stop)
 
 """

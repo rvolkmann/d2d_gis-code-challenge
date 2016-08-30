@@ -24,6 +24,7 @@ function initmap(){
 		layer.bindPopup('Cluster-ID: ' + feature.properties.cluster_id
 						+ '<br />Number of activities: ' + feature.properties.num_activity_points
 						+ '<br />Distance to activities center: ' + feature.properties.distance_to_cluster + ' m'
+						+ '<br />Snapped to: ' + feature.properties.snapped_to
 		);
 	}
 
@@ -68,8 +69,9 @@ function initmap(){
 	});
 	
 	var routes = new L.GeoJSON.AJAX("../data/routes.geojson");
+	var streets = new L.GeoJSON.AJAX("../data/osm_major_streets.geojson");
 	var aps = new L.GeoJSON.AJAX("../data/activity_points.geojson");
-	var overlayMaps = { "Bus Stops": bus_stops, "Bus Routes": routes, "Activity Points":aps };
+	var overlayMaps = { "Bus Stops": bus_stops, "Bus Routes": routes, "Major Streets":streets, "Activity Points":aps };
 	var baseMaps = { "OpenStreetMap": osm, "OpenTopoMap": otm, "ÖPNV Map": oepnv };
 	
 	oepnv.addTo(map);
