@@ -62,7 +62,7 @@ def cluster_pointlist(points,max_distance):
 Load activity points geojson file, transform and save features to new list
 
 """
-print('* Load Activity Points and transform to metric coordinate system ...')
+print('* Loading activity points and transform to metric coordinate system ...')
 with fiona.open(activity_points_file, 'r') as activity_points:
 	features = list(activity_points)
 points = [trans(f['geometry']['coordinates'],epsg_file,epsg_metric) for f in features]
@@ -77,7 +77,7 @@ Todo:
 * Make cluster max_distance dependend on number of activies in that cluster
 
 """
-print('* Cluster points...')
+print('* Clustering activity points ...')
 cluster = cluster_pointlist(points,max_distance)
 for n,feature in enumerate(features):
 	features[n]['properties']['cluster'] = int(cluster[n])
@@ -94,7 +94,7 @@ for feature in features:
 Calculate weighted mean of cluster points (cluster centroids)
 
 """
-print('* Calculate weighted mean of cluster points (cluster centroids) ...') 
+print('* Calculating the weighted centroids of the clusters ...') 
 cluster_centroids = []
 for key, cluster in clusters.iteritems():
 	if len(cluster) > 1: # Filter single activities
@@ -118,7 +118,7 @@ Todo:
 * After snapping, merge nearby bus stops
 
 """
-print('* Snap cluster centroids to bus routes to find the bus stops ...')
+print('* Snapping cluster centroids to bus routes or streets to find the bus stops ...')
 # Load routes geojson file
 with fiona.open(routes_file, 'r') as r:
 	routes = list(r)
@@ -185,7 +185,7 @@ for key,cluster_centroid in enumerate(cluster_centroids):
 Write output
 
 """
-print('* Write output ...')
+print('* Writing output files...')
 with open(os.path.join(script_dir,"../data/activity_points_clusters.geojson"), "w") as f:
 	f.write(json.dumps({"type": "FeatureCollection","features": features}))
 
