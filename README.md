@@ -27,7 +27,7 @@ The street data was downloaded from OpenStreetMap (highway=trunk|primary|seconda
 **Prerequisites**
 
 * Python
-* Python modules: SciPy, fiona, pyproj
+* Python modules: SciPy, fiona, pyproj, shapely
 
 Run the following command:
 
