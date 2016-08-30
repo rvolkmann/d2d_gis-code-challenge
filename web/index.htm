@@ -18,50 +18,84 @@
 
 <script>
 function initmap(){
+	
 	var map = L.map('mapid').setView([-6.816667, 39.283889], 12);
-	L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-		attribution: 'Tiles by <a href="http://mapc.org">MAPC</a>, Data by <a href="http://mass.gov/mgis">MassGIS</a>',
+	
+	var osm = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+		attribution: '© OpenStreetMap contributors',
 		maxZoom: 19,
 		minZoom: 11
-	}).addTo(map);
+	});
+
+	var otm = L.tileLayer('http://tile.opentopomap.org/{z}/{x}/{y}.png',{
+		attribution: '© OpenStreetMap contributors',
+		maxZoom: 19,
+		minZoom: 11
+	});
+
+	var oepnv = L.tileLayer('http://tile.memomaps.de/tilegen/{z}/{x}/{y}.png',{
+		attribution: '© OpenStreetMap contributors',
+		maxZoom: 19,
+		minZoom: 11
+	});
+
+ 
 
 	function bus_stops_popup(feature, layer){
 		layer.bindPopup('Cluster-ID: ' + feature.properties.cluster_id + '<br />Number of Activities: ' + feature.properties.num_activity_points);
 	}
 
-	var bus_stops_style = {
+	var bus_stops_style_small = {
+				radius: 4,
+				fillColor: "#ff7800",
+				color: "#000",
+				weight: 1,
+				opacity: 1,
+				fillOpacity: 0.6
+	}
+	
+	var bus_stops_style_medium = {
 				radius: 8,
 				fillColor: "#ff7800",
 				color: "#000",
 				weight: 1,
 				opacity: 1,
-				fillOpacity: 0.8
+				fillOpacity: 0.6
 	}
-	
-	var bus_stops_style_red = {
+
+	var bus_stops_style_big = {
 				radius: 12,
 				fillColor: "#ff0000",
 				color: "#000",
 				weight: 1,
 				opacity: 1,
-				fillOpacity: 0.8
+				fillOpacity: 0.6
 	}
 
 	var bus_stops = new L.GeoJSON.AJAX("../data/bus_stops.geojson",{
 		onEachFeature: bus_stops_popup,
 		pointToLayer: function (feature, latlng) {
-				if (feature.properties.num_activity_points < 10){
-					return L.circleMarker(latlng, bus_stops_style);
+				if (feature.properties.num_activity_points < 3){
+					return L.circleMarker(latlng, bus_stops_style_small);
+				}
+				else if (feature.properties.num_activity_points < 10){
+					return L.circleMarker(latlng, bus_stops_style_medium);
 				}
 				else {
-					return L.circleMarker(latlng, bus_stops_style_red);
+					return L.circleMarker(latlng, bus_stops_style_big);
 				}
 			}
 		}
 	);
-	 
+	
+	var routes = new L.GeoJSON.AJAX("../data/routes.geojson");
+	var aps = new L.GeoJSON.AJAX("../data/activity_points.geojson");
+	var overlayMaps = { "Bus Stops": bus_stops, "Bus Routes": routes, "Activity Points":aps };
+	var baseMaps = { "OpenStreetMap": osm, "OpenTopoMap": otm, "ÖPNV Map": oepnv };
+	
+	oepnv.addTo(map);
 	bus_stops.addTo(map);
-
+	L.control.layers(baseMaps,overlayMaps).addTo(map);
 }
 </script>
 
