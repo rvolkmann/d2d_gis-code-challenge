@@ -32,7 +32,7 @@ The street data was downloaded from OpenStreetMap (highway=trunk|primary|seconda
 Run the following command:
 
 ```bash
-python data/run.py
+python processing/run.py
 ```
 
 ## Web app
